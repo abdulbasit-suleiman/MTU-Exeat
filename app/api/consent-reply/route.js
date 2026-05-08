@@ -8,7 +8,7 @@ try {
   return Response.redirect(`${process.env.NEXT_PUBLIC_APP_URL}/?consent=error`);
 }
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://mtu-exeat.vercel.app';
 
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
