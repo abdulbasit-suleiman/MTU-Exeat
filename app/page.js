@@ -1,5 +1,6 @@
 'use client';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { auth, db } from '../lib/firebase';
 import {
   createUserWithEmailAndPassword,
@@ -251,8 +252,6 @@ body{font-family:'DM Sans',-apple-system,system-ui,sans-serif;background:var(--b
 .rr-n{font-weight:600;color:var(--text);}
 .rr-m{color:var(--text2);font-size:12px;}
 .rr-r{display:flex;align-items:center;gap:12px;color:var(--text2);font-size:12px;}
-
-/* Track progress stepper */
 .track-bar{display:flex;align-items:center;gap:0;margin:18px 0;}
 .track-step{display:flex;flex-direction:column;align-items:center;flex:1;position:relative;}
 .track-step:not(:last-child)::after{content:'';position:absolute;top:14px;left:50%;width:100%;height:2px;background:var(--border);z-index:0;}
@@ -264,8 +263,6 @@ body{font-family:'DM Sans',-apple-system,system-ui,sans-serif;background:var(--b
 .ts-lbl{font-size:10px;color:var(--text2);margin-top:6px;text-align:center;font-weight:500;}
 .track-step.done .ts-lbl{color:var(--green-d);}
 .track-step.active .ts-lbl{color:var(--mtu);font-weight:700;}
-
-/* Exeat detail card */
 .exeat-card{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);padding:22px;margin-bottom:14px;box-shadow:var(--shadow);animation:fadeUp 0.25s ease;}
 .exeat-card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px;}
 .ec-ref{font-size:10px;font-weight:700;color:var(--mtu);background:var(--mtu-xl);padding:3px 10px;border-radius:var(--r-pill);letter-spacing:0.4px;}
@@ -274,8 +271,6 @@ body{font-family:'DM Sans',-apple-system,system-ui,sans-serif;background:var(--b
 .ec-detail{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin-top:14px;padding-top:14px;border-top:1px solid var(--border);}
 .ec-d-item label{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.4px;display:block;margin-bottom:3px;}
 .ec-d-item span{font-size:12.5px;color:var(--text);}
-
-/* Modal overlay */
 .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:500;display:flex;align-items:center;justify-content:center;padding:20px;}
 .modal{background:var(--surface);border-radius:var(--r);padding:28px;max-width:560px;width:100%;box-shadow:var(--shadow-lg);animation:fadeUp 0.22s ease;max-height:90vh;overflow-y:auto;}
 .modal h3{font-size:18px;font-weight:600;color:var(--text);margin-bottom:6px;}
@@ -286,8 +281,6 @@ body{font-family:'DM Sans',-apple-system,system-ui,sans-serif;background:var(--b
 .modal-key{font-size:12px;font-weight:600;color:var(--text2);min-width:110px;}
 .modal-val{font-size:12.5px;color:var(--text);flex:1;}
 .modal-acts{display:flex;gap:10px;margin-top:22px;padding-top:18px;border-top:1px solid var(--border);}
-
-/* Loading spinner */
 .spinner{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--mtu);border-radius:50%;animation:spin 0.7s linear infinite;margin:40px auto;}
 .empty-state{text-align:center;padding:40px 20px;color:var(--text2);}
 .empty-state p{font-size:13px;margin-top:8px;}
@@ -350,11 +343,10 @@ function NavBar({ role, user, onLogout }) {
 }
 
 /* ─── LANDING ─── */
+// FIX 1: Use useSearchParams hook instead of window.location.search
 function Landing({ go }) {
-  // Add at the top of Landing:
-  const consentMsg = typeof window !== 'undefined'
-    ? new URLSearchParams(window.location.search).get('consent')
-    : null;
+  const searchParams = useSearchParams();
+  const consentMsg = searchParams.get('consent');
 
   const consentText = {
     approved: '✅ You have approved the exeat. The request will now be reviewed by Student Affairs.',
@@ -367,11 +359,14 @@ function Landing({ go }) {
   return (
     <>
       {consentText && (
-        <div className={consentMsg === 'approved' ? 'success-banner' : 'err-msg'}
-          style={{ marginBottom: 18 }}>
+        <div
+          className={consentMsg === 'approved' ? 'success-banner' : 'err-msg'}
+          style={{ marginBottom: 18 }}
+        >
           {consentText}
         </div>
-      )}      <div className="hero">
+      )}
+      <div className="hero">
         <svg className="hero-mountain" viewBox="0 0 1100 150" preserveAspectRatio="none">
           <polygon points="0,150 160,28 290,85 490,0 680,58 880,16 1100,72 1100,150" fill="#fff" />
         </svg>
@@ -618,7 +613,6 @@ function ExeatTracker({ exeat }) {
     if (key === 'affairs') {
       if (s === 'awaiting-affairs') return 'active';
       if (['awaiting-cso', 'cso-approved', 'approved'].includes(s)) return 'done';
-      if (s === 'declined') return 'pending';
       return 'pending';
     }
     if (key === 'cso') {
@@ -648,7 +642,7 @@ function ExeatTracker({ exeat }) {
 function StudentDashboard({ go, user }) {
   const [exeats, setExeats] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState('dashboard'); // 'dashboard' | 'pending' | 'history'
+  const [tab, setTab] = useState('dashboard');
   const [modal, setModal] = useState(null);
 
   useEffect(() => {
@@ -758,7 +752,6 @@ function StudentDashboard({ go, user }) {
     </>
   );
 
-  // default: dashboard
   return (
     <>
       <div className="stu-head">
@@ -817,6 +810,7 @@ function StudentDashboard({ go, user }) {
 }
 
 /* ─── EXEAT FORM ─── */
+// FIX 2: refNo generated in useEffect to avoid SSR/client mismatch
 function ExeatForm({ go, user }) {
   const [consent, setConsent] = useState(true);
   const [submitted, setSubmitted] = useState(false);
@@ -826,15 +820,20 @@ function ExeatForm({ go, user }) {
   const [returnDate, setReturnDate] = useState('');
   const [purpose, setPurpose] = useState('Unofficial');
   const [reason, setReason] = useState('');
-  const [refNo] = useState(() => `EX-2025-${Math.floor(1000 + Math.random() * 9000)}`);
+  // FIX: start empty, generate on client only
+  const [refNo, setRefNo] = useState('');
+
+  useEffect(() => {
+    setRefNo(`EX-2025-${Math.floor(1000 + Math.random() * 9000)}`);
+  }, []);
 
   async function handleSubmit() {
+    if (!refNo) return setErr('Please wait — reference number is being generated.');
     if (!exitDate || !returnDate) return setErr('Please select exit and return dates.');
     if (!reason.trim()) return setErr('Please describe the reason for your exit.');
     if (!user?.parentEmail) return setErr('No parent email on file. Please contact Student Affairs.');
     setLoading(true); setErr('');
     try {
-      // Save to Firestore first
       const exeatDoc = {
         refNo, studentUid: user.uid, studentName: user.name, matricNo: user.matric,
         department: `${user.dept} · ${user.college}`, college: user.college, dept: user.dept,
@@ -846,7 +845,6 @@ function ExeatForm({ go, user }) {
       const docRef = doc(collection(db, 'exeats'));
       await setDoc(docRef, { ...exeatDoc, exeatId: docRef.id });
 
-      // Send consent email
       const res = await fetch('/api/send-consent', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -868,7 +866,11 @@ function ExeatForm({ go, user }) {
     <>
       <div className="form-head">
         <div><h2>Exeat Permit Application</h2><p>Students' Affairs Division · Mountain Top University</p></div>
-        <div className="ref-pill"><div className="ref-lbl">Reference No.</div><div className="ref-val">{refNo}</div></div>
+        <div className="ref-pill">
+          <div className="ref-lbl">Reference No.</div>
+          {/* FIX: show placeholder while refNo generates */}
+          <div className="ref-val">{refNo || 'Generating…'}</div>
+        </div>
       </div>
       {submitted && (
         <div className="success-banner">
@@ -924,7 +926,7 @@ function ExeatForm({ go, user }) {
         {err && <div className="err-msg">⚠️ {err}</div>}
         <div className="form-actions">
           <button className="btn-sec" onClick={() => go('student-dashboard')}>Cancel</button>
-          <button className="btn-pri" onClick={handleSubmit} disabled={loading || submitted || !consent}>
+          <button className="btn-pri" onClick={handleSubmit} disabled={loading || submitted || !consent || !refNo}>
             {loading ? 'Sending…' : submitted ? 'Submitted ✓' : 'Submit & Send for Parent Consent ✈️'}
           </button>
         </div>
@@ -973,7 +975,7 @@ function AffairsDashboard() {
   const [filterStatus, setFStat] = useState('All');
   const [filterCollege, setFColl] = useState('All');
   const [modal, setModal] = useState(null);
-  const [tab, setTab] = useState('records'); // 'records' | 'notifications'
+  const [tab, setTab] = useState('records');
   const [page, setPage] = useState(0);
   const PAGE_SIZE = 8;
 
@@ -1151,7 +1153,7 @@ function CSODashboard() {
   const [exeats, setExeats] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState(null);
-  const [tab, setTab] = useState('queue'); // 'queue' | 'approved' | 'all'
+  const [tab, setTab] = useState('queue');
 
   useEffect(() => {
     const q = query(collection(db, 'exeats'), orderBy('createdAt', 'desc'));
@@ -1272,7 +1274,8 @@ function CSODashboard() {
 }
 
 /* ─── ROOT ─── */
-export default function App() {
+// FIX 3: Wrap in Suspense so useSearchParams works correctly
+function AppInner() {
   const [page, setPage] = useState('landing');
   const [session, setSession] = useState(null);
   function handleLogin(info) { setSession(info); }
@@ -1296,5 +1299,13 @@ export default function App() {
       <NavBar role={session?.role} user={session?.name} onLogout={handleLogout} />
       <div className="page">{renderPage()}</div>
     </>
+  );
+}
+
+export default function App() {
+  return (
+    <Suspense fallback={null}>
+      <AppInner />
+    </Suspense>
   );
 }
