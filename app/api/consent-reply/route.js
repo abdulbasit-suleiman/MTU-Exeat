@@ -1,5 +1,12 @@
-// app/api/consent-reply/route.js
+// app/api/consent-reply/route.js  — to handle parent consent replies from email links
 import { NextResponse } from 'next/server';
+let serviceAccount;
+try {
+  serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+} catch (e) {
+  console.error("FIREBASE_SERVICE_ACCOUNT env var is missing or invalid JSON");
+  return Response.redirect(`${process.env.NEXT_PUBLIC_APP_URL}/?consent=error`);
+}
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
