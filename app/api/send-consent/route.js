@@ -11,8 +11,10 @@ export async function POST(req) {
       studentName, matricNo, department, roomNo,
       exitDate, returnDate, purpose, reason,
       parentName, parentEmail,
-      refNo,
+       refNo, appUrl, 
     } = body;
+    const BASE_URL = appUrl || process.env.NEXT_PUBLIC_APP_URL || 'https://mtu-exeat.vercel.app';
+
 
     const approveUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/consent-reply?ref=${refNo}&action=approve`;
     const declineUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/consent-reply?ref=${refNo}&action=decline`;
