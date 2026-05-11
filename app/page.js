@@ -16,6 +16,7 @@ import {
 const PORTAL_CREDS = {
   affairs: { email: process.env.NEXT_PUBLIC_AFFAIRS_EMAIL || 'affairs@mtu.edu.ng', password: process.env.NEXT_PUBLIC_AFFAIRS_PASSWORD || 'Affairs@MTU2025' },
   cso: { email: process.env.NEXT_PUBLIC_CSO_EMAIL || 'cso@mtu.edu.ng', password: process.env.NEXT_PUBLIC_CSO_PASSWORD || 'CSO1795MTU' },
+  chaplaincy: { email: process.env.NEXT_PUBLIC_CHAPLAINCY_EMAIL || 'chaplaincy@mtu.edu.ng', password: process.env.NEXT_PUBLIC_CHAPLAINCY_PASSWORD || 'Chaplaincy@MTU2025' },
 };
 
 const css = `
@@ -54,6 +55,7 @@ body{font-family:'DM Sans',-apple-system,system-ui,sans-serif;background:var(--b
 @media(max-width:520px){.nav-uname{display:none;}}
 .nav-avatar{width:28px;height:28px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--mtu-d);flex-shrink:0;}
 .nav-logout{font-size:11.5px;color:rgba(255,255,255,0.5);background:rgba(255,255,255,0.07);border:none;padding:5px 12px;border-radius:var(--r-pill);cursor:pointer;font-family:inherit;transition:all 0.18s;white-space:nowrap;}
+@media(max-width:400px){.nav-logout{padding:5px 8px;font-size:10px;}}
 .nav-logout:hover{color:#fff;background:rgba(255,255,255,0.14);}
 .nav-portal-tag{font-size:10px;font-weight:700;padding:3px 10px;border-radius:var(--r-pill);letter-spacing:0.4px;text-transform:uppercase;white-space:nowrap;}
 @media(max-width:400px){.nav-portal-tag{display:none;}}
@@ -247,8 +249,8 @@ body{font-family:'DM Sans',-apple-system,system-ui,sans-serif;background:var(--b
 .nav-dot{width:7px;height:7px;background:var(--gold-l);border-radius:50%;animation:pulse 2s infinite;display:inline-block;flex-shrink:0;}
 
 /* STATS */
-.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px;}
-@media(max-width:640px){.stats-row{grid-template-columns:repeat(2,1fr);gap:10px;}}
+.stats-row{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:22px;}
+@media(max-width:400px){.stats-row{grid-template-columns:1fr 1fr;gap:8px;}}
 .stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-sm);padding:18px;box-shadow:var(--shadow);cursor:pointer;transition:all 0.18s;}
 .stat:hover{border-color:var(--mtu-l);transform:translateY(-2px);box-shadow:var(--shadow-lg);}
 .stat.active{border-color:var(--mtu);background:var(--mtu-xl);}
@@ -273,6 +275,8 @@ body{font-family:'DM Sans',-apple-system,system-ui,sans-serif;background:var(--b
 .stable{width:100%;border-collapse:collapse;min-width:380px;}
 .stable th{font-size:10.5px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:0.4px;padding:9px 10px;text-align:left;border-bottom:2px solid var(--border);}
 .stable td{font-size:12.5px;color:var(--text);padding:12px 10px;border-bottom:1px solid var(--border);}
+@media(max-width:600px){.stable th{font-size:9px;padding:7px 5px;}.stable td{font-size:11px;padding:9px 5px;}}
+@media(max-width:480px){.col-hide{display:none;}}
 .stable tr:last-child td{border-bottom:none;}
 .stable tr:hover td{background:var(--surf2);cursor:pointer;}
 .sn{font-weight:600;margin-bottom:2px;}
@@ -451,14 +455,16 @@ function fmtDate(d) {
   if (isNaN(dt.getTime())) return '—';
   return dt.toLocaleDateString('en-NG', { day: 'numeric', month: 'short', year: 'numeric' });
 }
+
 function fmtDateTime(d) {
   if (!d) return null;
   if (d?.toDate) d = d.toDate();
   const dt = new Date(d);
   if (isNaN(dt.getTime())) return null;
   return dt.toLocaleDateString('en-NG', { day: 'numeric', month: 'short', year: 'numeric' }) +
-    ' · ' + dt.toLocaleTimeString('en-NG', { hour: '2-digit', minute: '2-digit' });
+    ' · ' + dt.toLocaleTimeString('en-NG', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 }
+
 function initials(name = '') {
   return name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase() || '??';
 }
@@ -471,9 +477,9 @@ function avatarColors(i) {
 /* STATUS BADGE */
 function StatusBadge({ type }) {
   const map = {
-    approved: ['sb-ok', '✓ Approved'], 'cso-approved': ['sb-ok', '✓ CSO Approved'],
+    approved: ['sb-ok', '✓ Approved'], 'consent-given': ['sb-ok', '✓ Consent Given'],
     pending: ['sb-pnd', '⏳ Pending'], 'awaiting-affairs': ['sb-pnd', '⏳ Awaiting Affairs'],
-    'awaiting-cso': ['sb-pnd', '⏳ Awaiting CSO'], 'awaiting-parent': ['sb-pnd', '⏳ Awaiting Parent'],
+    'awaiting-consent': ['sb-pnd', '⏳ Awaiting Consent'], 'awaiting-parent': ['sb-pnd', '⏳ Awaiting Parent'],
     declined: ['sb-dcl', '✗ Declined'], referred: ['sb-dcl', '↩ Referred Back'],
   };
   const [cls, lbl] = map[type] || ['sb-pnd', type];
@@ -482,7 +488,7 @@ function StatusBadge({ type }) {
 
 /* NAV */
 function NavBar({ role, user, onLogout }) {
-  const tagMap = { student: ['tag-student', 'Student'], affairs: ['tag-affairs', 'Student Affairs'], cso: ['tag-cso', 'CSO'] };
+  const tagMap = { student: ['tag-student', 'Student'], affairs: ['tag-affairs', 'Student Affairs'], cso: ['tag-cso', 'CSO'], chaplaincy: ['tag-affairs', 'Chaplaincy'], hod: ['tag-student', 'HOD'] };
   const [cls, label] = tagMap[role] || [];
   return (
     <nav className="nav">
@@ -584,6 +590,8 @@ function Landing({ go }) {
           { id: 'student-login', icon: '🎓', cls: 'pi-s', title: 'Student Portal', color: 'var(--mtu)', desc: 'Students sign in or register to submit exeat requests and track approvals.' },
           { id: 'affairs-login', icon: '🏛', cls: 'pi-a', title: 'Student Affairs', color: 'var(--green-d)', desc: 'Authorised staff review requests, search records and forward to CSO.' },
           { id: 'cso-login', icon: '🛡', cls: 'pi-c', title: 'CSO Portal', color: 'var(--amber)', desc: 'Chief Security Officer gives final approval to all cleared exeat permits.' },
+          { id: 'chaplaincy-login', icon: '⛪', cls: 'pi-a', title: 'Chaplaincy Portal', color: '#1a5276', desc: 'Chaplaincy team views and filters student exeats by level and department.' },
+          { id: 'hod-login', icon: '🎓', cls: 'pi-c', title: 'HOD Portal', color: '#6c3483', desc: 'Heads of Department view exeats from students who listed their email.' },
         ].map(p => (
           <div className="portal-card" key={p.id} onClick={() => go(p.id)}>
             <div className={`p-icon ${p.cls}`}>{p.icon}</div>
@@ -731,6 +739,88 @@ function AffairsLogin({ go, onLogin }) {
   );
 }
 
+function HODLogin({ go, onLogin }) {
+  const [email, setEmail] = useState(''); const [pass, setPass] = useState(''); const [err, setErr] = useState(''); const [loading, setLoading] = useState(false);
+  async function handleLogin() {
+    if (!email || !pass) { setErr('Please enter your email and password.'); return; }
+    setLoading(true);
+    try {
+      const snap = await getDoc(doc(db, 'hods', email.toLowerCase().trim()));
+      if (snap.exists() && snap.data().password === pass) {
+        onLogin({ role: 'hod', name: snap.data().name || email, email: email.toLowerCase().trim() });
+        go('hod-dashboard');
+} else if (!snap.exists()) {
+  const reversedEmail = email.toLowerCase().trim().split('').reverse().join('');
+  if (pass !== reversedEmail) { setErr('Incorrect password. Your password is your email reversed.'); setLoading(false); return; }
+  await setDoc(doc(db, 'hods', email.toLowerCase().trim()), {
+    email: email.toLowerCase().trim(), password: reversedEmail, name: email.split('@')[0], createdAt: new Date().toISOString() });
+        onLogin({ role: 'hod', name: email.split('@')[0], email: email.toLowerCase().trim() });
+        go('hod-dashboard');
+
+
+      } else { setErr('Incorrect password.'); }
+    } catch (e) { setErr('Login failed: ' + e.message); }
+    setLoading(false);
+  }
+  return (
+    <div className="auth-wrap">
+      <div className="auth-left" style={{ background: 'linear-gradient(160deg,#6c3483 0%,#4a235a 100%)' }}>
+        <div>
+          <div className="nav-logo" style={{ marginBottom: 18, width: 42, height: 42, fontSize: 12, background: '#f5eef8', color: '#6c3483' }}>HOD</div>
+          <h2>HOD Portal</h2><p>Head of Department — Student exeat oversight.</p>
+          <div className="auth-features">
+            {[['📋', 'See all students who listed you as HOD.'], ['🔍', 'Filter by date and search by name.'], ['📥', 'Download Excel sheets by date.']].map(([ic, tx]) => (
+              <div className="auth-feat" key={tx}><div className="af-ic">{ic}</div><div className="af-txt">{tx}</div></div>
+            ))}
+          </div>
+        </div>
+        <span className="auth-footer-text">Mountain Top University · HOD Portal</span>
+      </div>
+      <div className="auth-right">
+        <h3>HOD Sign In</h3><p>Your email is your unique identifier. First time? Just sign in and your account is created automatically.</p>
+        {err && <div className="err-msg">⚠️ {err}</div>}
+        <div className="af"><label>Your Email</label><input type="email" value={email} onChange={e => { setEmail(e.target.value); setErr(''); }} placeholder="hod@mtu.edu.ng" /></div>
+        <div className="af"><label>Password</label><input type="password" value={pass} onChange={e => { setPass(e.target.value); setErr(''); }} placeholder="Choose or enter your password" /></div>
+        <button className="auth-btn" style={{ background: '#6c3483' }} onClick={handleLogin} disabled={loading}>{loading ? 'Signing in…' : 'Sign In to HOD Portal →'}</button>
+        <div style={{ marginTop: 14, textAlign: 'center' }}><span className="auth-link" style={{ color: 'var(--text3)', fontSize: 11 }} onClick={() => go('landing')}>← Back</span></div>
+      </div>
+    </div>
+  );
+}
+
+function ChaplainLogin({ go, onLogin }) {
+  const [email, setEmail] = useState(''); const [pass, setPass] = useState(''); const [err, setErr] = useState('');
+  function handleLogin() {
+    if (email === PORTAL_CREDS.chaplaincy.email && pass === PORTAL_CREDS.chaplaincy.password) { onLogin({ role: 'chaplaincy', name: 'Chaplaincy' }); go('chaplaincy-dashboard'); }
+    else setErr('Invalid credentials. Access denied.');
+  }
+  return (
+    <div className="auth-wrap">
+      <div className="auth-left" style={{ background: 'linear-gradient(160deg,#1a5276 0%,#0d3349 100%)' }}>
+        <div>
+          <div className="nav-logo" style={{ marginBottom: 18, width: 42, height: 42, fontSize: 12, background: '#d6eaf8', color: '#1a5276' }}>⛪</div>
+          <h2>Chaplaincy Portal</h2><p>Chaplaincy Division — Exeat oversight.</p>
+          <div className="auth-features">
+            {[['📋', 'View all approved exeat requests.'], ['🎓', 'Filter by level and department.'], ['📥', 'Download Excel sheets by date.']].map(([ic, tx]) => (
+              <div className="auth-feat" key={tx}><div className="af-ic">{ic}</div><div className="af-txt">{tx}</div></div>
+            ))}
+          </div>
+        </div>
+        <span className="auth-footer-text">Mountain Top University · Chaplaincy Division</span>
+      </div>
+      <div className="auth-right">
+        <h3>Chaplaincy Sign In</h3><p>Enter your Chaplaincy credentials.</p>
+        <div className="cred-hint"><strong>Demo Credentials</strong>Email: <code>chaplaincy@mtu.edu.ng</code><br />Password: <code>Chaplaincy@MTU2025</code></div>
+        {err && <div className="err-msg">⚠️ {err}</div>}
+        <div className="af"><label>Email</label><input type="email" value={email} onChange={e => { setEmail(e.target.value); setErr(''); }} placeholder="chaplaincy@mtu.edu.ng" /></div>
+        <div className="af"><label>Password</label><input type="password" value={pass} onChange={e => { setPass(e.target.value); setErr(''); }} placeholder="Enter password" /></div>
+        <button className="auth-btn" style={{ background: '#1a5276' }} onClick={handleLogin}>Sign In to Chaplaincy →</button>
+        <div style={{ marginTop: 14, textAlign: 'center' }}><span className="auth-link" style={{ color: 'var(--text3)', fontSize: 11 }} onClick={() => go('landing')}>← Back</span></div>
+      </div>
+    </div>
+  );
+}
+
 /* CSO LOGIN */
 function CSOLogin({ go, onLogin }) {
   const [email, setEmail] = useState(''); const [pass, setPass] = useState(''); const [err, setErr] = useState('');
@@ -767,13 +857,29 @@ function CSOLogin({ go, onLogin }) {
 
 /* TRACKER */
 function ExeatTracker({ exeat }) {
-  const steps = [{ key: 'submitted', label: 'Submitted' }, { key: 'parent', label: 'Parent' }, { key: 'affairs', label: 'Affairs' }, { key: 'cso', label: 'CSO' }];
+  const steps = [
+    { key: 'submitted', label: 'Submitted' },
+    { key: 'parent', label: 'Parent' },
+    { key: 'affairs', label: 'Affairs' },
+    { key: 'approved', label: 'Approved' },
+  ];
   function getState(key) {
     const s = exeat.status;
     if (key === 'submitted') return 'done';
-    if (key === 'parent') { if (s === 'awaiting-parent') return 'active'; if (['awaiting-affairs', 'awaiting-cso', 'cso-approved', 'approved', 'declined'].includes(s)) return 'done'; return 'pending'; }
-    if (key === 'affairs') { if (s === 'awaiting-affairs') return 'active'; if (['awaiting-cso', 'cso-approved', 'approved'].includes(s)) return 'done'; return 'pending'; }
-    if (key === 'cso') { if (s === 'awaiting-cso') return 'active'; if (['cso-approved', 'approved'].includes(s)) return 'done'; return 'pending'; }
+    if (key === 'parent') {
+      if (s === 'awaiting-parent') return 'active';
+      if (['awaiting-affairs', 'approved', 'declined'].includes(s)) return 'done';
+      return 'pending';
+    }
+    if (key === 'affairs') {
+      if (s === 'awaiting-affairs') return 'active';
+      if (s === 'approved') return 'done';
+      return 'pending';
+    }
+    if (key === 'approved') {
+      if (s === 'approved') return 'done';
+      return 'pending';
+    }
     return 'pending';
   }
   return (
@@ -799,7 +905,6 @@ function ExeatModal({ exeat, onClose, actions }) {
     { label: 'Request Submitted', time: fmtDateTime(exeat.createdAt), done: true, icon: '📤' },
     { label: 'Parent Consent', time: fmtDateTime(exeat.parentActionAt), done: exeat.parentStatus === 'approved', active: exeat.status === 'awaiting-parent', icon: '👨‍👩‍👧' },
     { label: 'Student Affairs Review', time: fmtDateTime(exeat.affairsActionAt), done: exeat.affairsStatus === 'approved', active: exeat.status === 'awaiting-affairs', icon: '🏛' },
-    { label: 'CSO Final Approval', time: fmtDateTime(exeat.csoActionAt), done: ['cso-approved', 'approved'].includes(exeat.status), active: exeat.status === 'awaiting-cso', icon: '🛡' },
   ];
   return (
     <div className="modal-bg" onClick={onClose}>
@@ -838,7 +943,7 @@ function ExeatModal({ exeat, onClose, actions }) {
           <div className="modal-section">
             <div className="modal-section-title">Approval Status</div>
             <div className="approval-trail">
-              {[{ role: 'Parent', status: exeat.parentStatus, time: exeat.parentActionAt }, { role: 'Affairs', status: exeat.affairsStatus, time: exeat.affairsActionAt }, { role: 'CSO', status: exeat.csoStatus, time: exeat.csoActionAt }].map(t => (
+              {[{ role: 'Parent', status: exeat.parentStatus, time: exeat.parentActionAt }, { role: 'Affairs', status: exeat.affairsStatus, time: exeat.affairsActionAt }].map(t => (
                 <div key={t.role} className={`trail-item ${tClass(t.status)}`}>
                   <div className="trail-role">{t.role}</div>
                   <div className="trail-status">{tLabel(t.status)}</div>
@@ -998,6 +1103,8 @@ function ExeatForm({ go, user }) {
   const [exitDate, setExitDate] = useState(''); const [returnDate, setReturnDate] = useState('');
   const [purpose, setPurpose] = useState('Unofficial'); const [reason, setReason] = useState('');
   const [refNo, setRefNo] = useState('');
+  const [hodEmail, setHodEmail] = useState(''); const [hodPhone, setHodPhone] = useState('');
+  const [level, setLevel] = useState('');
   useEffect(() => { setRefNo(`EX-2025-${Math.floor(1000 + Math.random() * 9000)}`); }, []);
 
   async function handleSubmit() {
@@ -1007,11 +1114,20 @@ function ExeatForm({ go, user }) {
     if (!user?.parentEmail) return setErr('No parent email on file. Please contact Student Affairs.');
     setLoading(true); setErr('');
     try {
-      const exeatDoc = { refNo, studentUid: user.uid, studentName: user.name, matricNo: user.matric, department: `${user.dept} · ${user.college}`, college: user.college, dept: user.dept, roomNo: user.room, exitDate, returnDate, purpose, reason, parentName: user.parentName, parentEmail: user.parentEmail, parentPhone: user.parentPhone, status: 'awaiting-parent', parentStatus: 'pending', affairsStatus: 'pending',studentEmail: user.email, csoStatus: 'pending', createdAt: serverTimestamp() };
+      const exeatDoc = { refNo, studentUid: user.uid, studentName: user.name, matricNo: user.matric, department: `${user.dept} · ${user.college}`, college: user.college, dept: user.dept, roomNo: user.room, level, exitDate, returnDate, purpose, reason, parentName: user.parentName, parentEmail: user.parentEmail, parentPhone: user.parentPhone, hodEmail: hodEmail || '', hodPhone: hodPhone || '', status: 'awaiting-parent', parentStatus: 'pending', affairsStatus: 'pending', studentEmail: user.email, csoStatus: 'pending', chapelStatus: 'pending', createdAt: serverTimestamp() };
       const docRef = doc(collection(db, 'exeats'));
       await setDoc(docRef, { ...exeatDoc, exeatId: docRef.id });
       // FIX: always pass production URL so parent email links never point to localhost
       const res = await fetch('/api/send-consent', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ refNo, studentName: user.name, matricNo: user.matric, department: `${user.dept} · ${user.college}`, roomNo: user.room, exitDate, returnDate, purpose, reason, parentName: user.parentName, parentEmail: user.parentEmail, appUrl: process.env.NEXT_PUBLIC_APP_URL || 'https://mtu-exeat.vercel.app' }) });
+      if (hodEmail) {
+        try {
+          await fetch('/api/notify-hod', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ hodEmail, hodPhone, studentName: user.name, matricNo: user.matric, refNo, exitDate, returnDate, reason, department: `${user.dept} · ${user.college}` }),
+          });
+        } catch (e) { console.error('HOD notify failed:', e); }
+      }
       const data = await res.json();
       if (!data.success) throw new Error(data.error?.message || 'Email sending failed');
       setSubmitted(true);
@@ -1047,6 +1163,22 @@ function ExeatForm({ go, user }) {
           </div>
         </div>
         <div className="ff" style={{ marginBottom: 22 }}><label>Reason(s) for Exit</label><textarea value={reason} onChange={e => setReason(e.target.value)} placeholder="Describe your reason in full detail — where you are going and why." /></div>
+        <div className="form-sec">HOD Details (Optional)</div>
+        <div className="form-grid">
+          <div className="ff"><label>HOD Email</label><input type="email" value={hodEmail} onChange={e => setHodEmail(e.target.value)} placeholder="hod@mtu.edu.ng (optional)" /></div>
+          <div className="ff"><label>HOD Phone</label><input type="tel" value={hodPhone} onChange={e => setHodPhone(e.target.value)} placeholder="+234 800 000 0000 (optional)" /></div>
+        </div>
+        <div className="form-sec">Level</div>
+        <div className="ff" style={{ marginBottom: 20 }}>
+          <label>Your Level</label>
+          <select value={level} onChange={e => setLevel(e.target.value)}>
+            <option value="">Select level</option>
+            <option value="100">100 Level</option>
+            <option value="200">200 Level</option>
+            <option value="300">300 Level</option>
+            <option value="400">400 Level</option>
+          </select>
+        </div>
         <div className="form-sec">Student Declaration</div>
         <div className="ff" style={{ marginBottom: 20 }}><label>Full Legal Name (digital signature)</label><input readOnly value={user?.name || ''} style={{ background: 'var(--surf2)' }} /></div>
         <div className="ptoggle">
@@ -1077,7 +1209,7 @@ function AffairsDashboard() {
     const unsub = onSnapshot(q, snap => { setExeats(snap.docs.map(d => ({ id: d.id, ...d.data() }))); setLoading(false); }, () => setLoading(false));
     return unsub;
   }, []);
-  const stats = { total: exeats.length, pending: exeats.filter(e => ['awaiting-parent', 'awaiting-affairs'].includes(e.status)).length, approved: exeats.filter(e => ['awaiting-cso', 'cso-approved', 'approved'].includes(e.status)).length, declined: exeats.filter(e => e.status === 'declined').length };
+  const stats = { total: exeats.length, pending: exeats.filter(e => ['awaiting-parent', 'awaiting-affairs'].includes(e.status)).length, approved: exeats.filter(e => ['awaiting-consent', 'consent-given', 'approved'].includes(e.status)).length, declined: exeats.filter(e => e.status === 'declined').length };
   const notifications = exeats.filter(e => e.status === 'awaiting-affairs').map(e => ({ type: 'new', title: `Parent approved — ${e.studentName}`, meta: `${e.matricNo} · pending review`, exeat: e })).concat(exeats.filter(e => e.status === 'awaiting-cso').map(e => ({ type: 'done', title: `Forwarded to CSO — ${e.studentName}`, meta: e.matricNo, exeat: e })));
   const filtered = exeats.filter(e => {
     const s = (search || '').toLowerCase();
@@ -1088,13 +1220,24 @@ function AffairsDashboard() {
   });
   const pageCount = Math.ceil(filtered.length / PAGE_SIZE);
   const paged = filtered.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE);
-  async function forwardToCSO(exeat) { await updateDoc(doc(db, 'exeats', exeat.id), { status: 'awaiting-cso', affairsStatus: 'approved', affairsActionAt: new Date().toISOString() }); setModal(null); }
+  async function forwardToConsent(exeat) {
+    await updateDoc(doc(db, 'exeats', exeat.id), { status: 'approved', affairsStatus: 'approved', affairsActionAt: new Date().toISOString() });
+    try {
+      await fetch('/api/notify-chaplaincy', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ studentName: exeat.studentName, matricNo: exeat.matricNo, refNo: exeat.refNo, exitDate: exeat.exitDate, returnDate: exeat.returnDate, reason: exeat.reason, department: exeat.department }) });
+    } catch (e) { console.error('Chaplaincy notify failed:', e); }
+    if (exeat.hodEmail) {
+      try {
+        await fetch('/api/notify-hod', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ hodEmail: exeat.hodEmail, studentName: exeat.studentName, matricNo: exeat.matricNo, refNo: exeat.refNo, exitDate: exeat.exitDate, returnDate: exeat.returnDate, reason: exeat.reason }) });
+      } catch (e) { console.error('HOD notify failed:', e); }
+    }
+    setModal(null);
+  }
   async function declineExeat(exeat) { await updateDoc(doc(db, 'exeats', exeat.id), { status: 'declined', affairsStatus: 'declined', affairsActionAt: new Date().toISOString() }); setModal(null); }
   function sType(s) { if (['awaiting-parent', 'awaiting-affairs'].includes(s)) return 'pending'; if (['awaiting-cso', 'cso-approved', 'approved'].includes(s)) return 'approved'; if (s === 'declined') return 'declined'; return 'pending'; }
 
   return (
     <>
-      {modal && <ExeatModal exeat={modal} onClose={() => setModal(null)} actions={modal.status === 'awaiting-affairs' ? (<><button className="btn-sec" style={{ flex: 1, color: 'var(--red)', borderColor: 'var(--red)' }} onClick={() => declineExeat(modal)}>✗ Decline</button><button className="btn-pri" style={{ flex: 1, background: 'var(--green-d)' }} onClick={() => forwardToCSO(modal)}>✓ Forward to CSO</button></>) : null} />}
+      {modal && <ExeatModal exeat={modal} onClose={() => setModal(null)} actions={modal.status === 'awaiting-affairs' ? (<><button className="btn-sec" style={{ flex: 1, color: 'var(--red)', borderColor: 'var(--red)' }} onClick={() => declineExeat(modal)}>✗ Decline</button><button className="btn-pri" style={{ flex: 1, background: 'var(--green-d)' }} onClick={() => forwardToConsent(modal)}>✓ Forward for Consent</button></>) : null} />}
       <div className="portal-head green">
         <div><h2>Student Affairs Dashboard</h2><p>Students' Affairs Division · Exeat Management &amp; Records</p></div>
         <div className="notif-pill" onClick={() => setTab(t => t === 'notifications' ? 'records' : 'notifications')}>
@@ -1136,14 +1279,14 @@ function AffairsDashboard() {
               <>
                 <div className="table-wrap">
                   <table className="stable">
-                    <thead><tr><th>Student</th><th>Matric No.</th><th>Exit Date</th><th>Submitted</th><th>Status</th><th></th></tr></thead>
+                    <thead><tr><th>Student</th><th>Matric No.</th><th>Exit Date</th><th className="col-hide">Submitted</th><th>Status</th><th></th></tr></thead>
                     <tbody>
                       {paged.map(e => (
                         <tr key={e.id} onClick={() => setModal(e)}>
                           <td><div className="sn">{e.studentName}</div><div className="sd">{e.dept} · {e.college}</div></td>
                           <td>{e.matricNo}</td>
                           <td style={{ color: 'var(--text2)' }}>{fmtDate(e.exitDate)}</td>
-                          <td style={{ color: 'var(--text3)', fontSize: 11 }}>{fmtDate(e.createdAt)}</td>
+                          <td className="col-hide" style={{color:'var(--text3)',fontSize:11}}>{fmtDate(e.createdAt)}</td>
                           <td><StatusBadge type={sType(e.status)} /></td>
                           <td><button className="pgbtn" onClick={ev => { ev.stopPropagation(); setModal(e); }}>View</button></td>
                         </tr>
@@ -1181,129 +1324,235 @@ function AffairsDashboard() {
 /* CSO DASHBOARD */
 function CSODashboard() {
   const [exeats, setExeats] = useState([]); const [loading, setLoading] = useState(true);
-  const [modal, setModal] = useState(null); const [tab, setTab] = useState('queue');
+  const [search, setSearch] = useState(''); const [filterDate, setFilterDate] = useState('');
+  const [modal, setModal] = useState(null);
+
   useEffect(() => {
     const q = query(collection(db, 'exeats'), orderBy('createdAt', 'desc'));
     const unsub = onSnapshot(q, snap => { setExeats(snap.docs.map(d => ({ id: d.id, ...d.data() }))); setLoading(false); }, () => setLoading(false));
     return unsub;
   }, []);
-  const queue = exeats.filter(e => e.status === 'awaiting-cso');
-  const approved = exeats.filter(e => ['cso-approved', 'approved'].includes(e.status));
-  // FIX: referred has its own unique tab key so clicking it shows only referred records
-  const referred = exeats.filter(e => e.status === 'referred');
-  const all = exeats.filter(e => !['awaiting-parent', 'awaiting-affairs'].includes(e.status));
-  // FIX: every stat maps to a distinct tab string — no two share 'all'
-  const stats = [
-    { n: queue.length, l: 'Pending Your Approval', c: 'var(--amber)', t: 'queue' },
-    { n: approved.length, l: 'Approved This Session', c: 'var(--green)', t: 'approved' },
-    { n: referred.length, l: 'Referred Back', c: 'var(--red)', t: 'referred' },
-    { n: all.length, l: 'Total Processed', c: 'var(--mtu)', t: 'all' },
-  ];
-  async function approveExeat(exeat) {
-    await updateDoc(doc(db, 'exeats', exeat.id), {
-      status: 'cso-approved',
-      csoStatus: 'approved',
-      csoActionAt: new Date().toISOString(),
+
+  const visible = exeats.filter(e => !['awaiting-parent', 'awaiting-affairs'].includes(e.status));
+  const filtered = visible.filter(e => {
+    const s = (search || '').toLowerCase();
+    const mS = !s || e.studentName?.toLowerCase().includes(s) || e.matricNo?.toLowerCase().includes(s);
+    const mD = !filterDate || e.exitDate === filterDate;
+    return mS && mD;
+  });
+
+  function downloadExcel(data, filename) {
+    import('xlsx').then(XLSX => {
+      const rows = data.map(e => ({ 'Ref No': e.refNo, 'Student Name': e.studentName, 'Matric No': e.matricNo, 'Department': e.dept, 'College': e.college, 'Level': e.level || '—', 'Exit Date': e.exitDate, 'Return Date': e.returnDate, 'Purpose': e.purpose, 'Reason': e.reason, 'Status': e.status, 'Parent': e.parentStatus, 'Affairs': e.affairsStatus }));
+      const ws = XLSX.utils.json_to_sheet(rows);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Exeats');
+      XLSX.writeFile(wb, filename);
     });
-
-    // Send approval email to student
-    if (exeat.studentEmail) {
-      try {
-        await fetch('/api/send-approval', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            studentName: exeat.studentName,
-            studentEmail: exeat.studentEmail,
-            matricNo: exeat.matricNo,
-            refNo: exeat.refNo,
-            exitDate: exeat.exitDate,
-            returnDate: exeat.returnDate,
-            purpose: exeat.purpose,
-          }),
-        });
-      } catch (e) { console.error('Approval email failed:', e); }
-    }
-
-    setModal(null);
   }
-  async function referExeat(exeat) { await updateDoc(doc(db, 'exeats', exeat.id), { status: 'referred', csoStatus: 'declined', csoActionAt: new Date().toISOString() }); setModal(null); }
-  // FIX: displayList correctly maps each tab to its own list
-  const displayList = tab === 'queue' ? queue : tab === 'approved' ? approved : tab === 'referred' ? referred : all;
-  const titles = { queue: 'Exeat Approval Queue', approved: 'Approved by CSO', referred: 'Referred Back to Affairs', all: 'All Processed Exeats' };
-  const subs = { queue: 'All have parent consent & Affairs clearance', referred: 'Sent back for further review', approved: '', all: '' };
 
   return (
     <>
-      {modal && <ExeatModal exeat={modal} onClose={() => setModal(null)} actions={modal.status === 'awaiting-cso' ? (<><button className="btn-sec" style={{ flex: 1, color: 'var(--red)', borderColor: 'var(--red)' }} onClick={() => referExeat(modal)}>↩ Refer Back to Affairs</button><button className="btn-pri" style={{ flex: 1, background: 'var(--green-d)' }} onClick={() => approveExeat(modal)}>✓ Approve Exeat</button></>) : null} />}
+      {modal && <ExeatModal exeat={modal} onClose={() => setModal(null)} />}
       <div className="portal-head amber">
-        <div><h2>CSO — Final Approval Portal</h2><p>Chief Security Officer · Exeat Clearance Queue</p></div>
-        <div className="cso-badge"><span>{queue.length} awaiting approval</span></div>
+        <div><h2>CSO — Exeat Viewer</h2><p>Chief Security Officer · Read-only consent view</p></div>
+        <div className="cso-badge"><span>{visible.filter(e => e.status === 'awaiting-consent').length} awaiting consent</span></div>
       </div>
       <div className="stats-row">
-        {stats.map(s => (
-          <div className={`stat${tab === s.t ? ' active' : ''}`} key={s.t} onClick={() => setTab(s.t)}>
-            <div className="stat-n" style={{ color: s.c }}>{s.n}</div><div className="stat-l">{s.l}</div>
-          </div>
+        {[{ n: visible.length, l: 'Total Visible', c: 'var(--mtu)' }, { n: visible.filter(e => e.status === 'awaiting-consent').length, l: 'Pending Consent', c: 'var(--amber)' }, { n: visible.filter(e => e.status === 'consent-given').length, l: 'Consent Given', c: 'var(--green)' }, { n: visible.filter(e => e.status === 'declined').length, l: 'Declined', c: 'var(--red)' }].map(s => (
+          <div className="stat" key={s.l}><div className="stat-n" style={{ color: s.c }}>{s.n}</div><div className="stat-l">{s.l}</div></div>
         ))}
       </div>
-      <div className="cso-q">
-        <h4>{titles[tab]}{subs[tab] && <span className="q-sub">{subs[tab]}</span>}</h4>
+      <div className="spanel">
+        <h4>Exeat Records (View Only)</h4>
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 14 }}>
+          <input style={{ flex: 1, minWidth: 160, border: '1.5px solid var(--border2)', borderRadius: 'var(--r-sm)', padding: '10px 14px', fontSize: 13, background: 'var(--surf2)', color: 'var(--text)', fontFamily: 'inherit' }} placeholder="Search name or matric…" value={search} onChange={e => setSearch(e.target.value)} />
+          <input type="date" style={{ border: '1.5px solid var(--border2)', borderRadius: 'var(--r-sm)', padding: '10px 14px', fontSize: 13, background: 'var(--surf2)', color: 'var(--text)', fontFamily: 'inherit' }} value={filterDate} onChange={e => setFilterDate(e.target.value)} />
+          <button className="btn-pri" style={{ background: 'var(--green-d)', padding: '10px 18px', fontSize: 13 }} onClick={() => downloadExcel(filtered, `CSO-Exeats-${filterDate || 'All'}.xlsx`)}>⬇ Excel</button>
+          {filterDate && <button className="btn-sec" style={{ padding: '10px 14px', fontSize: 12 }} onClick={() => setFilterDate('')}>Clear Date</button>}
+        </div>
         {loading && <div className="spinner" />}
-        {!loading && displayList.length === 0 && <div className="empty-state"><div className="es-icon">{tab === 'queue' ? '🎉' : '📭'}</div><p>{tab === 'queue' ? 'No exeats pending your approval.' : tab === 'referred' ? 'No referred exeats.' : 'No records here yet.'}</p></div>}
-        {!loading && displayList.map((q, i) => {
-          const { bg, cl } = avatarColors(i);
-          return (
-            <div className="qi" key={q.id}>
-              <div className="q-av" style={{ background: bg, color: cl }}>{initials(q.studentName)}</div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div className="q-name">{q.studentName}</div>
-                <div className="q-meta">{q.matricNo} · {q.department}</div>
-                <div className="q-meta">Exit: {fmtDate(q.exitDate)} → {fmtDate(q.returnDate)}</div>
-                <div className="q-rsn" style={{ marginTop: 6 }}>"{q.reason?.slice(0, 100)}{q.reason?.length > 100 ? '…' : ''}"</div>
-                <div className="flow-bs" style={{ marginTop: 8 }}>
-                  <span className="fb fb-p">✓ Parent</span>
-                  <span className="fb fb-a">✓ Affairs</span>
-                  {['cso-approved', 'approved'].includes(q.status) ? <span className="fb" style={{ background: 'var(--green-l)', color: 'var(--green-d)' }}>✓ CSO Approved</span>
-                    : q.status === 'referred' ? <span className="fb" style={{ background: 'var(--red-l)', color: 'var(--red)' }}>↩ Referred</span>
-                      : <span className="fb fb-c">⏳ CSO Pending</span>}
-                </div>
-                {/* FIX: timestamps shown on each card */}
-                <div style={{ fontSize: 10.5, color: 'var(--text3)', marginTop: 6 }}>
-                  Submitted: {fmtDateTime(q.createdAt) || fmtDate(q.createdAt)}
-                  {q.csoActionAt && <span style={{ marginLeft: 12 }}>CSO Action: {fmtDateTime(q.csoActionAt)}</span>}
-                </div>
-                <div className="q-acts">
-                  <button className="qa-v" onClick={() => setModal(q)}>👁 View Details</button>
-                  {q.status === 'awaiting-cso' && <><button className="qa-a" onClick={() => approveExeat(q)}>✓ Approve</button><button className="qa-d" onClick={() => referExeat(q)}>↩ Refer</button></>}
-                  {['cso-approved', 'approved'].includes(q.status) && <span className="sbadge sb-ok">✓ Approved</span>}
-                  {q.status === 'referred' && <span className="sbadge sb-dcl">↩ Referred</span>}
-                </div>
-              </div>
-            </div>
-          );
-        })}
+        {!loading && filtered.length === 0 && <div className="empty-state"><div className="es-icon">📭</div><p>No records match.</p></div>}
+        {!loading && filtered.length > 0 && (
+          <div className="table-wrap">
+            <table className="stable">
+              <thead><tr><th>Student</th><th>Matric</th><th>Exit Date</th><th>Return</th><th>Status</th><th></th></tr></thead>
+              <tbody>
+                {filtered.map(e => (
+                  <tr key={e.id} onClick={() => setModal(e)}>
+                    <td><div style={{ fontWeight: 600 }}>{e.studentName}</div><div style={{ fontSize: 11, color: 'var(--text2)' }}>{e.dept}</div></td>
+                    <td>{e.matricNo}</td>
+                    <td style={{ color: 'var(--text2)' }}>{fmtDate(e.exitDate)}</td>
+                    <td style={{ color: 'var(--text2)' }}>{fmtDate(e.returnDate)}</td>
+                    <td><StatusBadge type={e.status} /></td>
+                    <td><button className="pgbtn" onClick={ev => { ev.stopPropagation(); setModal(e); }}>View</button></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
-      {tab === 'approved' && approved.length > 0 && (
-        <div className="rec-card"><h4>CSO Approval Log</h4>
-          {approved.map(r => (
-            <div className="rr" key={r.id}>
-              <div><span className="rr-n">{r.studentName}</span><span className="rr-m"> · {r.matricNo} · Room {r.roomNo}</span></div>
-              <div className="rr-r"><span style={{ fontSize: 11, color: 'var(--text3)' }}>{fmtDateTime(r.csoActionAt) || fmtDate(r.csoActionAt || r.createdAt)}</span><span className="sbadge sb-ok">✓ CSO Approved</span></div>
-            </div>
-          ))}
+    </>
+  );
+}
+
+function ChaplainDashboard() {
+  const [exeats, setExeats] = useState([]); const [loading, setLoading] = useState(true);
+  const [filterLevel, setFilterLevel] = useState('All'); const [filterDept, setFilterDept] = useState('');
+  const [filterDate, setFilterDate] = useState(''); const [search, setSearch] = useState('');
+  const [modal, setModal] = useState(null);
+
+  useEffect(() => {
+    const q = query(collection(db, 'exeats'), orderBy('createdAt', 'desc'));
+    const unsub = onSnapshot(q, snap => { setExeats(snap.docs.map(d => ({ id: d.id, ...d.data() }))); setLoading(false); }, () => setLoading(false));
+    return unsub;
+  }, []);
+
+  const visible = exeats.filter(e => ['awaiting-consent', 'consent-given', 'approved'].includes(e.status));
+  const filtered = visible.filter(e => {
+    const mL = filterLevel === 'All' || e.level === filterLevel;
+    const mD = !filterDept || e.dept?.toLowerCase().includes(filterDept.toLowerCase());
+    const mDate = !filterDate || e.exitDate === filterDate;
+    const mS = !search || e.studentName?.toLowerCase().includes(search.toLowerCase()) || e.matricNo?.toLowerCase().includes(search.toLowerCase());
+    return mL && mD && mDate && mS;
+  });
+
+  const depts = [...new Set(exeats.map(e => e.dept).filter(Boolean))];
+
+  function downloadExcel() {
+    import('xlsx').then(XLSX => {
+      const rows = filtered.map(e => ({ 'Ref No': e.refNo, 'Student Name': e.studentName, 'Matric No': e.matricNo, 'Level': e.level || '—', 'Department': e.dept, 'College': e.college, 'Room': e.roomNo, 'Exit Date': e.exitDate, 'Return Date': e.returnDate, 'Purpose': e.purpose, 'Reason': e.reason, 'Status': e.status, 'Parent Consent': e.parentStatus, 'Affairs': e.affairsStatus }));
+      const ws = XLSX.utils.json_to_sheet(rows);
+      const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Exeats');
+      XLSX.writeFile(wb, `Chaplaincy-Exeats-${filterDate || filterLevel || 'All'}.xlsx`);
+    });
+  }
+
+  return (
+    <>
+      {modal && <ExeatModal exeat={modal} onClose={() => setModal(null)} />}
+      <div className="portal-head" style={{ background: 'linear-gradient(135deg,#1a5276 0%,#0d3349 100%)' }}>
+        <div><h2>Chaplaincy Dashboard</h2><p>Mountain Top University · Student Exeat Oversight</p></div>
+        <div className="cso-badge" style={{ borderColor: '#5dade2' }}><span style={{ color: '#aed6f1' }}>{visible.filter(e => e.status === 'awaiting-consent').length} pending consent</span></div>
+      </div>
+      <div className="stats-row">
+        {[{ n: visible.length, l: 'Total Exeats', c: 'var(--mtu)' }, { n: visible.filter(e => e.status === 'awaiting-consent').length, l: 'Awaiting Consent', c: 'var(--amber)' }, { n: visible.filter(e => e.level === '100').length, l: '100 Level', c: 'var(--blue)' }, { n: visible.filter(e => e.level === '200').length, l: '200 Level', c: 'var(--green)' }].map(s => (
+          <div className="stat" key={s.l}><div className="stat-n" style={{ color: s.c }}>{s.n}</div><div className="stat-l">{s.l}</div></div>
+        ))}
+      </div>
+      <div className="spanel">
+        <h4>📋 Student Exeat Records</h4>
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 14 }}>
+          <input style={{ flex: 1, minWidth: 150, border: '1.5px solid var(--border2)', borderRadius: 'var(--r-sm)', padding: '10px 14px', fontSize: 13, background: 'var(--surf2)', color: 'var(--text)', fontFamily: 'inherit' }} placeholder="Search name or matric…" value={search} onChange={e => setSearch(e.target.value)} />
+          <select style={{ border: '1.5px solid var(--border2)', borderRadius: 'var(--r-sm)', padding: '10px 14px', fontSize: 13, background: 'var(--surf2)', color: 'var(--text)', fontFamily: 'inherit' }} value={filterLevel} onChange={e => setFilterLevel(e.target.value)}>
+            <option value="All">All Levels</option><option value="100">100 Level</option><option value="200">200 Level</option><option value="300">300 Level</option><option value="400">400 Level</option>
+          </select>
+          <input list="dept-list" style={{ border: '1.5px solid var(--border2)', borderRadius: 'var(--r-sm)', padding: '10px 14px', fontSize: 13, background: 'var(--surf2)', color: 'var(--text)', fontFamily: 'inherit', minWidth: 140 }} placeholder="Filter department…" value={filterDept} onChange={e => setFilterDept(e.target.value)} />
+          <datalist id="dept-list">{depts.map(d => <option key={d} value={d} />)}</datalist>
+          <input type="date" style={{ border: '1.5px solid var(--border2)', borderRadius: 'var(--r-sm)', padding: '10px 14px', fontSize: 13, background: 'var(--surf2)', color: 'var(--text)', fontFamily: 'inherit' }} value={filterDate} onChange={e => setFilterDate(e.target.value)} />
+          <button className="btn-pri" style={{ background: '#1a5276', padding: '10px 18px', fontSize: 13 }} onClick={downloadExcel}>⬇ Excel</button>
+          {(filterDate || filterDept || filterLevel !== 'All') && <button className="btn-sec" style={{ padding: '10px 14px', fontSize: 12 }} onClick={() => { setFilterDate(''); setFilterDept(''); setFilterLevel('All'); }}>Clear Filters</button>}
         </div>
-      )}
-      {tab === 'referred' && referred.length > 0 && (
-        <div className="rec-card"><h4>Referred Exeats Log</h4>
-          {referred.map(r => (
-            <div className="rr" key={r.id}>
-              <div><span className="rr-n">{r.studentName}</span><span className="rr-m"> · {r.matricNo}</span></div>
-              <div className="rr-r"><span style={{ fontSize: 11, color: 'var(--text3)' }}>{fmtDateTime(r.csoActionAt) || fmtDate(r.csoActionAt)}</span><span className="sbadge sb-dcl">↩ Referred</span></div>
-            </div>
-          ))}
+        {loading && <div className="spinner" />}
+        {!loading && filtered.length === 0 && <div className="empty-state"><div className="es-icon">📭</div><p>No exeats match your filters.</p></div>}
+        {!loading && filtered.length > 0 && (
+          <div className="table-wrap">
+            <table className="stable">
+              <thead><tr><th>Student</th><th>Level</th><th>Matric</th><th>Exit Date</th><th>Return</th><th>Status</th><th></th></tr></thead>
+              <tbody>
+                {filtered.map(e => (
+                  <tr key={e.id} onClick={() => setModal(e)}>
+                    <td><div style={{ fontWeight: 600 }}>{e.studentName}</div><div style={{ fontSize: 11, color: 'var(--text2)' }}>{e.dept}</div></td>
+                    <td><span className="sbadge sb-pnd" style={{ fontSize: 10 }}>{e.level ? e.level + 'L' : '—'}</span></td>
+                    <td>{e.matricNo}</td>
+                    <td style={{ color: 'var(--text2)' }}>{fmtDate(e.exitDate)}</td>
+                    <td style={{ color: 'var(--text2)' }}>{fmtDate(e.returnDate)}</td>
+                    <td><StatusBadge type={e.status} /></td>
+                    <td><button className="pgbtn" onClick={ev => { ev.stopPropagation(); setModal(e); }}>View</button></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+        <div style={{ marginTop: 12, fontSize: 12, color: 'var(--text3)' }}>Showing {filtered.length} of {visible.length} records</div>
+      </div>
+    </>
+  );
+}
+
+function HODDashboard({ session }) {
+  const [exeats, setExeats] = useState([]); const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState(''); const [filterDate, setFilterDate] = useState('');
+  const [modal, setModal] = useState(null);
+
+  useEffect(() => {
+    if (!session?.email) return;
+    const q = query(collection(db, 'exeats'), where('hodEmail', '==', session.email), orderBy('createdAt', 'desc'));
+    const unsub = onSnapshot(q, snap => { setExeats(snap.docs.map(d => ({ id: d.id, ...d.data() }))); setLoading(false); }, () => setLoading(false));
+    return unsub;
+  }, [session?.email]);
+
+  const filtered = exeats.filter(e => {
+    const s = (search || '').toLowerCase();
+    const mS = !s || e.studentName?.toLowerCase().includes(s) || e.matricNo?.toLowerCase().includes(s);
+    const mD = !filterDate || e.exitDate === filterDate;
+    return mS && mD;
+  });
+
+  function downloadExcel() {
+    import('xlsx').then(XLSX => {
+      const rows = filtered.map(e => ({ 'Ref No': e.refNo, 'Student Name': e.studentName, 'Matric No': e.matricNo, 'Level': e.level || '—', 'Department': e.dept, 'Exit Date': e.exitDate, 'Return Date': e.returnDate, 'Purpose': e.purpose, 'Reason': e.reason, 'Status': e.status }));
+      const ws = XLSX.utils.json_to_sheet(rows);
+      const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'My Students');
+      XLSX.writeFile(wb, `HOD-Exeats-${filterDate || 'All'}.xlsx`);
+    });
+  }
+
+  return (
+    <>
+      {modal && <ExeatModal exeat={modal} onClose={() => setModal(null)} />}
+      <div className="portal-head" style={{ background: 'linear-gradient(135deg,#6c3483 0%,#4a235a 100%)' }}>
+        <div><h2>HOD Dashboard</h2><p>{session?.email} · Student Exeat Notifications</p></div>
+        <div className="cso-badge" style={{ borderColor: '#c39bd3' }}><span style={{ color: '#d7bde2' }}>{exeats.length} students</span></div>
+      </div>
+      <div className="stats-row">
+        {[{ n: exeats.length, l: 'Total Students', c: 'var(--mtu)' }, { n: exeats.filter(e => ['awaiting-consent', 'awaiting-affairs', 'awaiting-parent'].includes(e.status)).length, l: 'Pending', c: 'var(--amber)' }, { n: exeats.filter(e => ['consent-given', 'approved'].includes(e.status)).length, l: 'Approved', c: 'var(--green)' }, { n: exeats.filter(e => e.status === 'declined').length, l: 'Declined', c: 'var(--red)' }].map(s => (
+          <div className="stat" key={s.l}><div className="stat-n" style={{ color: s.c }}>{s.n}</div><div className="stat-l">{s.l}</div></div>
+        ))}
+      </div>
+      <div className="spanel">
+        <h4>Students Who Listed You as HOD</h4>
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 14 }}>
+          <input style={{ flex: 1, minWidth: 150, border: '1.5px solid var(--border2)', borderRadius: 'var(--r-sm)', padding: '10px 14px', fontSize: 13, background: 'var(--surf2)', color: 'var(--text)', fontFamily: 'inherit' }} placeholder="Search name or matric…" value={search} onChange={e => setSearch(e.target.value)} />
+          <input type="date" style={{ border: '1.5px solid var(--border2)', borderRadius: 'var(--r-sm)', padding: '10px 14px', fontSize: 13, background: 'var(--surf2)', color: 'var(--text)', fontFamily: 'inherit' }} value={filterDate} onChange={e => setFilterDate(e.target.value)} />
+          <button className="btn-pri" style={{ background: '#6c3483', padding: '10px 18px', fontSize: 13 }} onClick={downloadExcel}>⬇ Excel</button>
+          {filterDate && <button className="btn-sec" style={{ padding: '10px 14px', fontSize: 12 }} onClick={() => setFilterDate('')}>Clear</button>}
         </div>
-      )}
+        {loading && <div className="spinner" />}
+        {!loading && exeats.length === 0 && <div className="empty-state"><div className="es-icon">📭</div><p>No students have listed your email as HOD yet.</p></div>}
+        {!loading && filtered.length > 0 && (
+          <div className="table-wrap">
+            <table className="stable">
+              <thead><tr><th>Student</th><th>Matric</th><th>Level</th><th>Exit Date</th><th>Return</th><th>Status</th><th></th></tr></thead>
+              <tbody>
+                {filtered.map(e => (
+                  <tr key={e.id} onClick={() => setModal(e)}>
+                    <td><div style={{ fontWeight: 600 }}>{e.studentName}</div><div style={{ fontSize: 11, color: 'var(--text2)' }}>{e.dept}</div></td>
+                    <td>{e.matricNo}</td>
+                    <td><span className="sbadge sb-pnd" style={{ fontSize: 10 }}>{e.level ? e.level + 'L' : '—'}</span></td>
+                    <td style={{ color: 'var(--text2)' }}>{fmtDate(e.exitDate)}</td>
+                    <td style={{ color: 'var(--text2)' }}>{fmtDate(e.returnDate)}</td>
+                    <td><StatusBadge type={e.status} /></td>
+                    <td><button className="pgbtn" onClick={ev => { ev.stopPropagation(); setModal(e); }}>View</button></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
     </>
   );
 }
@@ -1355,7 +1604,8 @@ function AppInner() {
         const elapsed = Date.now() - parsed.lastActive;
         if (elapsed < 8 * 60 * 1000) {
           setSession({ role: parsed.role, name: parsed.name });
-          setPage(parsed.role === 'affairs' ? 'affairs-dashboard' : 'cso-dashboard');
+          const dashMap = { affairs: 'affairs-dashboard', cso: 'cso-dashboard', chaplaincy: 'chaplaincy-dashboard', hod: 'hod-dashboard' };
+          setPage(dashMap[parsed.role] || 'landing');
         } else {
           localStorage.removeItem('mtu_staff_session'); // expired
         }
@@ -1399,7 +1649,6 @@ function AppInner() {
       }));
     }
   }
-
   function handleLogout() {
     clearTimeout(inactivityTimer.current);
     localStorage.removeItem('mtu_staff_session');
@@ -1426,6 +1675,10 @@ function AppInner() {
       case 'exeat-form': return <ExeatForm go={setPage} user={session} />;
       case 'affairs-dashboard': return <AffairsDashboard />;
       case 'cso-dashboard': return <CSODashboard />;
+      case 'chaplaincy-login': return <ChaplainLogin go={setPage} onLogin={handleLogin} />;
+      case 'hod-login': return <HODLogin go={setPage} onLogin={handleLogin} />;
+      case 'chaplaincy-dashboard': return <ChaplainDashboard />;
+      case 'hod-dashboard': return <HODDashboard session={session} />;
       default: return <Landing go={setPage} />;
     }
   }
